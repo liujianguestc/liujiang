@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据查看与编辑弹窗优化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .demo-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .demo-btn {
+            padding: 12px 24px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .demo-btn:hover {
+            background-color: #40a9ff;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .pronunciation-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .pronunciation-group .form-input {
+            flex: 1;
+        }
+        
+        .meaning-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .meaning-group .form-select {
+            width: 100px;
+        }
+        
+        .meaning-group .form-input {
+            flex: 1;
+        }
+        
+        .delete-meaning-btn {
+            background: none;
+            border: none;
+            color: #ff4d4f;
+            cursor: pointer;
+            font-size: 18px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+        }
+        
+        .delete-meaning-btn:hover {
+            background-color: rgba(255, 77, 79, 0.1);
+        }
+        
+        .add-meaning-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: none;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            color: #666;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        .add-meaning-btn:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+            background: white;
+        }
+        
+        .btn-cancel {
+            color: #666;
+        }
+        
+        .btn-cancel:hover {
+            border-color: #666;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+        }
+    </style>
+</head>
+<body>
+    <h1>数据查看与编辑弹窗优化示例</h1>
+    <p>点击下方按钮查看不同类型的查看/编辑弹窗</p>
+    
+    <div class="demo-container">
+        <button class="demo-btn" onclick="openModal('wordModal')">查看/编辑单词</button>
+        <button class="demo-btn" onclick="openModal('phraseModal')">查看/编辑短语</button>
+        <button class="demo-btn" onclick="openModal('sentenceModal')">查看/编辑句子</button>
+    </div>
+    
+    <!-- 单词查看/编辑弹窗 -->
+    <div id="wordModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">查看/编辑单词</h2>
+                <button class="close-btn" onclick="closeModal('wordModal')">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">单词</label>
+                    <input type="text" class="form-input" value="good">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">发音</label>
+                    <div class="pronunciation-group">
+                        <input type="text" class="form-input" value="gʊd" placeholder="美式发音">
+                        <input type="text" class="form-input" value="gʊd" placeholder="英式发音">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">词性与含义</label>
+                    
+                    <div class="meaning-group">
+                        <select class="form-select">
+                            <option>adj.</option>
+                            <option>v.</option>
+                            <option>n.</option>
+                            <option>adv.</option>
+                        </select>
+                        <input type="text" class="form-input" value="好的">
+                        <button class="delete-meaning-btn">×</button>
+                    </div>
+                    
+                    <div class="meaning-group">
+                        <select class="form-select">
+                            <option>n.</option>
+                            <option>adj.</option>
+                            <option>v.</option>
+                            <option>adv.</option>
+                        </select>
+                        <input type="text" class="form-input" value="好处">
+                        <button class="delete-meaning-btn">×</button>
+                    </div>
+                    
+                    <button class="add-meaning-btn">+ 新增词性&释义</button>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal('wordModal')">取消</button>
+                <button class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 短语查看/编辑弹窗 -->
+    <div id="phraseModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">查看/编辑短语</h2>
+                <button class="close-btn" onclick="closeModal('phraseModal')">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">短语</label>
+                    <input type="text" class="form-input" value="Good morning!">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">含义</label>
+                    <input type="text" class="form-input" value="早上好！">
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal('phraseModal')">取消</button>
+                <button class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 句子查看/编辑弹窗 -->
+    <div id="sentenceModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">查看/编辑句子</h2>
+                <button class="close-btn" onclick="closeModal('sentenceModal')">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">句子</label>
+                    <textarea class="form-textarea">How old are you? I'm thirteen.</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">含义</label>
+                    <textarea class="form-textarea">你多大了？我13岁。</textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal('sentenceModal')">取消</button>
+                <button class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 打开弹窗函数
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        
+        // 关闭弹窗函数
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // 点击弹窗外部关闭弹窗
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+            }
+        }
+        
+        // 添加词性释义功能
+        document.querySelectorAll('.add-meaning-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const meaningGroup = this.previousElementSibling.cloneNode(true);
+                // 清空输入值
+                meaningGroup.querySelector('input').value = '';
+                this.parentNode.insertBefore(meaningGroup, this);
+            });
+        });
+        
+        // 删除词性释义功能
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-meaning-btn')) {
+                const meaningGroup = e.target.closest('.meaning-group');
+                if (meaningGroup && document.querySelectorAll('.meaning-group').length > 1) {
+                    meaningGroup.remove();
+                }
+            }
+        });
+        
+        // 保存功能示例
+        document.querySelectorAll('.btn-primary').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                const title = modal.querySelector('.modal-title').textContent;
+                alert(`${title}成功！`);
+                modal.parentElement.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

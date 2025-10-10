@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增单词数据 - 优化设计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .form-select, .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .words-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .words-table th {
+            background-color: #f9f9f9;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .words-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+        
+        .word-row {
+            position: relative;
+        }
+        
+        .word-row:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .actions-cell {
+            width: 100px;
+            text-align: center;
+        }
+        
+        .meaning-group {
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .meaning-group select, .meaning-group input {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .meaning-group .delete-btn {
+            background: none;
+            border: none;
+            color: #ff4d4f;
+            cursor: pointer;
+            font-size: 14px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+        }
+        
+        .meaning-group .delete-btn:hover {
+            background-color: rgba(255, 77, 79, 0.1);
+        }
+        
+        .add-meaning-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            background: none;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            color: #666;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .add-meaning-btn:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+            background: white;
+        }
+        
+        .btn-cancel {
+            color: #666;
+        }
+        
+        .btn-cancel:hover {
+            border-color: #666;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+        }
+        
+        .add-word-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 16px;
+            background: none;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            color: #666;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .add-word-btn:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        
+        .delete-row-btn {
+            background: none;
+            border: 1px solid #ff4d4f;
+            color: #ff4d4f;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .delete-row-btn:hover {
+            background-color: #ff4d4f;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">新增单词数据</h2>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">学段</label>
+                        <select class="form-select">
+                            <option>初中</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">教材</label>
+                        <select class="form-select">
+                            <option>七年级上册</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">教材版本</label>
+                        <select class="form-select">
+                            <option>人教版</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">单元</label>
+                        <select class="form-select">
+                            <option>Unit 1</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 20px 0 10px; font-size: 16px; color: #333;">新增单词&释义</h3>
+                
+                <table class="words-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">单词</th>
+                            <th style="width: 20%;">发音（美式/英式）</th>
+                            <th style="width: 45%;">词性与含义</th>
+                            <th style="width: 10%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="word-row">
+                            <td>
+                                <input type="text" class="form-input" value="good">
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" class="form-input" value="gud" placeholder="美式">
+                                    <input type="text" class="form-input" value="gud" placeholder="英式">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="meaning-group">
+                                    <select>
+                                        <option>adj.</option>
+                                        <option>v.</option>
+                                        <option>n.</option>
+                                        <option>adv.</option>
+                                    </select>
+                                    <input type="text" value="好的">
+                                    <button class="delete-btn" title="删除此词性释义">×</button>
+                                </div>
+                                <div class="meaning-group">
+                                    <select>
+                                        <option>v.</option>
+                                        <option>adj.</option>
+                                        <option>n.</option>
+                                        <option>adv.</option>
+                                    </select>
+                                    <input type="text" value="好的">
+                                    <button class="delete-btn" title="删除此词性释义">×</button>
+                                </div>
+                                <button class="add-meaning-btn">+ 新增词性&释义</button>
+                            </td>
+                            <td class="actions-cell">
+                                <button class="delete-row-btn">删除</button>
+                            </td>
+                        </tr>
+                        <tr class="word-row">
+                            <td>
+                                <input type="text" class="form-input" value="book">
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" class="form-input" value="bʊk" placeholder="美式">
+                                    <input type="text" class="form-input" value="bʊk" placeholder="英式">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="meaning-group">
+                                    <select>
+                                        <option>n.</option>
+                                        <option>adj.</option>
+                                        <option>v.</option>
+                                        <option>adv.</option>
+                                    </select>
+                                    <input type="text" value="书">
+                                    <button class="delete-btn" title="删除此词性释义">×</button>
+                                </div>
+                                <div class="meaning-group">
+                                    <select>
+                                        <option>v.</option>
+                                        <option>adj.</option>
+                                        <option>n.</option>
+                                        <option>adv.</option>
+                                    </select>
+                                    <input type="text" value="预订">
+                                    <button class="delete-btn" title="删除此词性释义">×</button>
+                                </div>
+                                <button class="add-meaning-btn">+ 新增词性&释义</button>
+                            </td>
+                            <td class="actions-cell">
+                                <button class="delete-row-btn">删除</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <button class="add-word-btn">+ 新增单词</button>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-cancel">取消</button>
+                <button class="btn btn-primary">新增单词数据</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加词性释义
+        document.querySelectorAll('.add-meaning-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const meaningGroup = this.previousElementSibling.cloneNode(true);
+                // 清空输入值
+                meaningGroup.querySelector('input').value = '';
+                this.parentNode.insertBefore(meaningGroup, this);
+            });
+        });
+        
+        // 删除词性释义
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-btn')) {
+                const meaningGroup = e.target.closest('.meaning-group');
+                if (meaningGroup && document.querySelectorAll('.meaning-group').length > 1) {
+                    meaningGroup.remove();
+                }
+            }
+        });
+        
+        // 添加新单词行
+        document.querySelector('.add-word-btn').addEventListener('click', function() {
+            const tableBody = document.querySelector('.words-table tbody');
+            const newRow = document.querySelector('.word-row').cloneNode(true);
+            
+            // 清空输入值
+            newRow.querySelectorAll('input').forEach(input => {
+                input.value = '';
+            });
+            
+            // 只保留一组词性释义
+            const meaningGroups = newRow.querySelectorAll('.meaning-group');
+            for (let i = 1; i < meaningGroups.length; i++) {
+                meaningGroups[i].remove();
+            }
+            
+            tableBody.appendChild(newRow);
+        });
+        
+        // 删除单词行
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-row-btn')) {
+                const wordRow = e.target.closest('.word-row');
+                if (wordRow && document.querySelectorAll('.word-row').length > 1) {
+                    wordRow.remove();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

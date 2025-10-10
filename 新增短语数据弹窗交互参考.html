@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增短语数据 - 优化设计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .form-select, .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .phrases-section {
+            margin-top: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .phrases-list {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .phrase-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 80px;
+            background-color: #f9f9f9;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .phrase-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr 80px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+        }
+        
+        .phrase-item:last-child {
+            border-bottom: none;
+        }
+        
+        .phrase-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .phrase-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .delete-btn {
+            background: none;
+            border: 1px solid #ff4d4f;
+            color: #ff4d4f;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            justify-self: center;
+        }
+        
+        .delete-btn:hover {
+            background-color: #ff4d4f;
+            color: white;
+        }
+        
+        .add-phrase-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: none;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            color: #666;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        
+        .add-phrase-btn:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+            background: white;
+        }
+        
+        .btn-cancel {
+            color: #666;
+        }
+        
+        .btn-cancel:hover {
+            border-color: #666;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .phrase-header, .phrase-item {
+                grid-template-columns: 1fr 1fr 60px;
+            }
+            
+            .form-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">新增短语数据</h2>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">学段</label>
+                        <select class="form-select">
+                            <option>初中</option>
+                            <option>高中</option>
+                            <option>小学</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">教材</label>
+                        <select class="form-select">
+                            <option>七年级上册</option>
+                            <option>七年级下册</option>
+                            <option>八年级上册</option>
+                            <option>八年级下册</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">教材版本</label>
+                        <select class="form-select">
+                            <option>人教版</option>
+                            <option>北师大版</option>
+                            <option>苏教版</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">单元</label>
+                        <select class="form-select">
+                            <option>Unit 1</option>
+                            <option>Unit 2</option>
+                            <option>Unit 3</option>
+                            <option>Unit 4</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="phrases-section">
+                    <h3 class="section-title">新增短语</h3>
+                    
+                    <div class="phrases-list">
+                        <div class="phrase-header">
+                            <span>短语</span>
+                            <span>含义</span>
+                            <span>操作</span>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="Good afternoon!">
+                            <input type="text" class="phrase-input" value="下午好！">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="Good morning!">
+                            <input type="text" class="phrase-input" value="早上好！">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="How are you?">
+                            <input type="text" class="phrase-input" value="你好吗？">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="Thank you!">
+                            <input type="text" class="phrase-input" value="谢谢！">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="You're welcome!">
+                            <input type="text" class="phrase-input" value="不客气！">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="What's your name?">
+                            <input type="text" class="phrase-input" value="你叫什么名字？">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="Nice to meet you!">
+                            <input type="text" class="phrase-input" value="很高兴认识你！">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                        
+                        <div class="phrase-item">
+                            <input type="text" class="phrase-input" value="How old are you?">
+                            <input type="text" class="phrase-input" value="你多大了？">
+                            <button class="delete-btn">删除</button>
+                        </div>
+                    </div>
+                    
+                    <button class="add-phrase-btn">+ 新增短语</button>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-cancel">取消</button>
+                <button class="btn btn-primary">新增短语数据</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加新短语行
+        document.querySelector('.add-phrase-btn').addEventListener('click', function() {
+            const phrasesList = document.querySelector('.phrases-list');
+            const newPhraseItem = document.createElement('div');
+            newPhraseItem.className = 'phrase-item';
+            newPhraseItem.innerHTML = `
+                <input type="text" class="phrase-input" placeholder="输入短语">
+                <input type="text" class="phrase-input" placeholder="输入含义">
+                <button class="delete-btn">删除</button>
+            `;
+            
+            // 插入到最后一个短语项之前
+            const lastPhraseItem = phrasesList.querySelector('.phrase-item:last-child');
+            phrasesList.insertBefore(newPhraseItem, lastPhraseItem.nextSibling);
+            
+            // 添加删除事件
+            newPhraseItem.querySelector('.delete-btn').addEventListener('click', function() {
+                newPhraseItem.remove();
+            });
+        });
+        
+        // 为所有删除按钮添加事件
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const phraseItem = this.closest('.phrase-item');
+                if (phraseItem && document.querySelectorAll('.phrase-item').length > 1) {
+                    phraseItem.remove();
+                }
+            });
+        });
+        
+        // 模拟保存功能
+        document.querySelector('.btn-primary').addEventListener('click', function() {
+            const phrases = [];
+            document.querySelectorAll('.phrase-item').forEach(item => {
+                const phraseInput = item.querySelector('input:nth-child(1)');
+                const meaningInput = item.querySelector('input:nth-child(2)');
+                
+                if (phraseInput.value.trim() && meaningInput.value.trim()) {
+                    phrases.push({
+                        phrase: phraseInput.value,
+                        meaning: meaningInput.value
+                    });
+                }
+            });
+            
+            if (phrases.length > 0) {
+                alert(`成功添加 ${phrases.length} 条短语数据！`);
+                // 在实际应用中，这里应该发送数据到服务器
+            } else {
+                alert('请至少添加一条有效的短语数据！');
+            }
+        });
+        
+        // 取消按钮功能
+        document.querySelector('.btn-cancel').addEventListener('click', function() {
+            if (confirm('确定要取消吗？所有未保存的数据将丢失。')) {
+                // 在实际应用中，这里应该关闭弹窗
+                alert('操作已取消');
+            }
+        });
+    </script>
+</body>
+</html>
