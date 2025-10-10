@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建作业单弹窗</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background-color: white;
+            width: 90%;
+            max-width: 1000px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fafafa;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #8c8c8c;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        
+        .close-btn:hover {
+            background-color: #f0f0f0;
+            color: #595959;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .form-section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #262626;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background-color: #1890ff;
+            border-radius: 2px;
+            margin-right: 8px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .form-group {
+            flex: 1 0 200px;
+            padding: 0 10px;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #595959;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e8e8e8;
+            margin-bottom: 15px;
+        }
+        
+        .tab {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #595959;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #1890ff;
+            border-bottom-color: #1890ff;
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .search-box input {
+            padding-left: 36px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8c8c8c;
+        }
+        
+        .metadata-list {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        .metadata-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .metadata-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metadata-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .metadata-checkbox {
+            margin-right: 10px;
+        }
+        
+        .metadata-content {
+            flex: 1;
+        }
+        
+        .metadata-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn:hover {
+            border-color: #40a9ff;
+            color: #40a9ff;
+        }
+        
+        .batch-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .selected-count {
+            font-size: 13px;
+            color: #8c8c8c;
+        }
+        
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background-color: #fafafa;
+        }
+        
+        .selected-items {
+            margin-top: 20px;
+        }
+        
+        .selected-items-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #595959;
+        }
+        
+        .selected-item {
+            display: inline-flex;
+            align-items: center;
+            background-color: #f0f8ff;
+            border: 1px solid #bae7ff;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .remove-selected {
+            margin-left: 6px;
+            cursor: pointer;
+            color: #8c8c8c;
+        }
+        
+        .remove-selected:hover {
+            color: #ff4d4f;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #8c8c8c;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <button id="openModal" style="padding: 10px 20px; background-color: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer;">打开新建作业单弹窗</button>
+
+    <div class="modal-overlay" id="modalOverlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">新建作业单</div>
+                <button class="close-btn" id="closeModal">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-section">
+                    <div class="section-title">作业单信息</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stage">学段</label>
+                            <select id="stage">
+                                <option value="">请选择学段</option>
+                                <option value="初中" selected>初中</option>
+                                <option value="高中">高中</option>
+                                <option value="小学">小学</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="grade">年级</label>
+                            <select id="grade">
+                                <option value="">请选择年级</option>
+                                <option value="七年级" selected>七年级</option>
+                                <option value="八年级">八年级</option>
+                                <option value="九年级">九年级</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="semester">学期</label>
+                            <select id="semester">
+                                <option value="">请选择学期</option>
+                                <option value="上册" selected>上册</option>
+                                <option value="下册">下册</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="version">教材版本</label>
+                            <select id="version">
+                                <option value="">请选择教材版本</option>
+                                <option value="人教版" selected>人教版</option>
+                                <option value="北师大版">北师大版</option>
+                                <option value="外研版">外研版</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="assignmentName">作业单名称</label>
+                        <input type="text" id="assignmentName" placeholder="请输入作业单名称">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <div class="section-title">添加内容</div>
+                    
+                    <div class="tabs">
+                        <div class="tab active" data-tab="words">单词</div>
+                        <div class="tab" data-tab="phrases">短语</div>
+                        <div class="tab" data-tab="sentences">句子</div>
+                    </div>
+                    
+                    <!-- 单词内容 -->
+                    <div class="tab-content active" id="words-tab">
+                        <div class="batch-actions">
+                            <div class="selected-count">已选择 <span id="words-selected-count">0</span> 个单词</div>
+                            <button class="btn btn-primary" id="add-words">添加选中单词</button>
+                        </div>
+                        
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="搜索单词..." id="words-search">
+                        </div>
+                        
+                        <div class="metadata-list" id="words-list">
+                            <!-- 单词列表将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 短语内容 -->
+                    <div class="tab-content" id="phrases-tab">
+                        <div class="batch-actions">
+                            <div class="selected-count">已选择 <span id="phrases-selected-count">0</span> 个短语</div>
+                            <button class="btn btn-primary" id="add-phrases">添加选中短语</button>
+                        </div>
+                        
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="搜索短语..." id="phrases-search">
+                        </div>
+                        
+                        <div class="metadata-list" id="phrases-list">
+                            <!-- 短语列表将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 句子内容 -->
+                    <div class="tab-content" id="sentences-tab">
+                        <div class="batch-actions">
+                            <div class="selected-count">已选择 <span id="sentences-selected-count">0</span> 个句子</div>
+                            <button class="btn btn-primary" id="add-sentences">添加选中句子</button>
+                        </div>
+                        
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" placeholder="搜索句子..." id="sentences-search">
+                        </div>
+                        
+                        <div class="metadata-list" id="sentences-list">
+                            <!-- 句子列表将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 已选内容展示区域 -->
+                    <div class="selected-items">
+                        <div class="section-title">已选内容</div>
+                        <div id="selected-words-container">
+                            <div class="selected-items-title">单词 (<span id="selected-words-count">0</span>)</div>
+                            <div id="selected-words-list" class="selected-items-list">
+                                <!-- 已选单词将通过JavaScript动态生成 -->
+                                <div class="empty-state">暂无已选单词</div>
+                            </div>
+                        </div>
+                        
+                        <div id="selected-phrases-container" style="margin-top: 15px;">
+                            <div class="selected-items-title">短语 (<span id="selected-phrases-count">0</span>)</div>
+                            <div id="selected-phrases-list" class="selected-items-list">
+                                <!-- 已选短语将通过JavaScript动态生成 -->
+                                <div class="empty-state">暂无已选短语</div>
+                            </div>
+                        </div>
+                        
+                        <div id="selected-sentences-container" style="margin-top: 15px;">
+                            <div class="selected-items-title">句子 (<span id="selected-sentences-count">0</span>)</div>
+                            <div id="selected-sentences-list" class="selected-items-list">
+                                <!-- 已选句子将通过JavaScript动态生成 -->
+                                <div class="empty-state">暂无已选句子</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn" id="cancelBtn">取消</button>
+                <button class="btn btn-primary" id="confirmBtn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 示例数据 - 实际应用中应从后端获取
+        const wordsData = [
+            { id: 1, word: "good", us_pronunciation: "/ɡʊd/", uk_pronunciation: "/ɡʊd/", partOfSpeech: "adj.", meaning: "好的" },
+            { id: 2, word: "hello", us_pronunciation: "/həˈloʊ/", uk_pronunciation: "/həˈləʊ/", partOfSpeech: "int.", meaning: "你好" },
+            { id: 3, word: "book", us_pronunciation: "/bʊk/", uk_pronunciation: "/bʊk/", partOfSpeech: "n.", meaning: "书" },
+            { id: 4, word: "pen", us_pronunciation: "/pen/", uk_pronunciation: "/pen/", partOfSpeech: "n.", meaning: "钢笔" },
+            { id: 5, word: "student", us_pronunciation: "/ˈstuːdnt/", uk_pronunciation: "/ˈstjuːdnt/", partOfSpeech: "n.", meaning: "学生" },
+            { id: 6, word: "teacher", us_pronunciation: "/ˈtiːtʃər/", uk_pronunciation: "/ˈtiːtʃə(r)/", partOfSpeech: "n.", meaning: "老师" },
+            { id: 7, word: "school", us_pronunciation: "/skuːl/", uk_pronunciation: "/skuːl/", partOfSpeech: "n.", meaning: "学校" },
+            { id: 8, word: "class", us_pronunciation: "/klæs/", uk_pronunciation: "/klɑːs/", partOfSpeech: "n.", meaning: "班级" }
+        ];
+        
+        const phrasesData = [
+            { id: 1, phrase: "Good afternoon!", meaning: "下午好!" },
+            { id: 2, phrase: "Good morning!", meaning: "早上好!" },
+            { id: 3, phrase: "Good evening!", meaning: "晚上好!" },
+            { id: 4, phrase: "How are you?", meaning: "你好吗?" },
+            { id: 5, phrase: "Thank you!", meaning: "谢谢你!" },
+            { id: 6, phrase: "You're welcome!", meaning: "不客气!" },
+            { id: 7, phrase: "See you later!", meaning: "回头见!" },
+            { id: 8, phrase: "What's your name?", meaning: "你叫什么名字?" }
+        ];
+        
+        const sentencesData = [
+            { id: 1, sentence: "How old are you? I'm thirteen.", meaning: "你多大了？我13岁。" },
+            { id: 2, sentence: "What's your name? My name is Tom.", meaning: "你叫什么名字？我叫汤姆。" },
+            { id: 3, sentence: "Where are you from? I'm from China.", meaning: "你来自哪里？我来自中国。" },
+            { id: 4, sentence: "How are you? I'm fine, thank you.", meaning: "你好吗？我很好，谢谢。" },
+            { id: 5, sentence: "What time is it? It's nine o'clock.", meaning: "几点了？九点了。" },
+            { id: 6, sentence: "What's this? It's a book.", meaning: "这是什么？这是一本书。" },
+            { id: 7, sentence: "Can you help me? Sure, no problem.", meaning: "你能帮我吗？当然，没问题。" },
+            { id: 8, sentence: "Do you like English? Yes, I do.", meaning: "你喜欢英语吗？是的，我喜欢。" }
+        ];
+        
+        // 存储已选内容
+        let selectedWords = [];
+        let selectedPhrases = [];
+        let selectedSentences = [];
+        
+        // DOM元素
+        const modalOverlay = document.getElementById('modalOverlay');
+        const openModalBtn = document.getElementById('openModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // 打开弹窗
+        openModalBtn.addEventListener('click', () => {
+            modalOverlay.style.display = 'flex';
+            // 初始化数据
+            renderWordsList();
+            renderPhrasesList();
+            renderSentencesList();
+            updateSelectedCounts();
+        });
+        
+        // 关闭弹窗
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        
+        // 点击弹窗外部关闭
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+        
+        function closeModal() {
+            modalOverlay.style.display = 'none';
+            // 重置表单和选择状态
+            resetForm();
+        }
+        
+        // 选项卡切换
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // 更新选项卡激活状态
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 显示对应内容
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === `${tabId}-tab`) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        // 渲染单词列表
+        function renderWordsList(filter = '') {
+            const wordsList = document.getElementById('words-list');
+            wordsList.innerHTML = '';
+            
+            const filteredWords = wordsData.filter(word => 
+                word.word.toLowerCase().includes(filter.toLowerCase()) || 
+                word.meaning.toLowerCase().includes(filter.toLowerCase())
+            );
+            
+            if (filteredWords.length === 0) {
+                wordsList.innerHTML = '<div class="empty-state">未找到匹配的单词</div>';
+                return;
+            }
+            
+            filteredWords.forEach(word => {
+                const isSelected = selectedWords.some(selected => selected.id === word.id);
+                
+                const wordItem = document.createElement('div');
+                wordItem.className = 'metadata-item';
+                wordItem.innerHTML = `
+                    <div class="metadata-checkbox">
+                        <input type="checkbox" class="word-checkbox" data-id="${word.id}" ${isSelected ? 'checked' : ''}>
+                    </div>
+                    <div class="metadata-content">
+                        <div><strong>${word.word}</strong></div>
+                        <div style="font-size: 12px; color: #8c8c8c;">
+                            美: ${word.us_pronunciation} | 英: ${word.uk_pronunciation} | ${word.partOfSpeech} | ${word.meaning}
+                        </div>
+                    </div>
+                `;
+                wordsList.appendChild(wordItem);
+            });
+            
+            // 添加复选框事件监听
+            document.querySelectorAll('.word-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const wordId = parseInt(this.getAttribute('data-id'));
+                    const word = wordsData.find(w => w.id === wordId);
+                    
+                    if (this.checked) {
+                        if (!selectedWords.some(w => w.id === wordId)) {
+                            selectedWords.push(word);
+                        }
+                    } else {
+                        selectedWords = selectedWords.filter(w => w.id !== wordId);
+                    }
+                    
+                    updateSelectedCounts();
+                });
+            });
+        }
+        
+        // 渲染短语列表
+        function renderPhrasesList(filter = '') {
+            const phrasesList = document.getElementById('phrases-list');
+            phrasesList.innerHTML = '';
+            
+            const filteredPhrases = phrasesData.filter(phrase => 
+                phrase.phrase.toLowerCase().includes(filter.toLowerCase()) || 
+                phrase.meaning.toLowerCase().includes(filter.toLowerCase())
+            );
+            
+            if (filteredPhrases.length === 0) {
+                phrasesList.innerHTML = '<div class="empty-state">未找到匹配的短语</div>';
+                return;
+            }
+            
+            filteredPhrases.forEach(phrase => {
+                const isSelected = selectedPhrases.some(selected => selected.id === phrase.id);
+                
+                const phraseItem = document.createElement('div');
+                phraseItem.className = 'metadata-item';
+                phraseItem.innerHTML = `
+                    <div class="metadata-checkbox">
+                        <input type="checkbox" class="phrase-checkbox" data-id="${phrase.id}" ${isSelected ? 'checked' : ''}>
+                    </div>
+                    <div class="metadata-content">
+                        <div><strong>${phrase.phrase}</strong></div>
+                        <div style="font-size: 12px; color: #8c8c8c;">${phrase.meaning}</div>
+                    </div>
+                `;
+                phrasesList.appendChild(phraseItem);
+            });
+            
+            // 添加复选框事件监听
+            document.querySelectorAll('.phrase-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const phraseId = parseInt(this.getAttribute('data-id'));
+                    const phrase = phrasesData.find(p => p.id === phraseId);
+                    
+                    if (this.checked) {
+                        if (!selectedPhrases.some(p => p.id === phraseId)) {
+                            selectedPhrases.push(phrase);
+                        }
+                    } else {
+                        selectedPhrases = selectedPhrases.filter(p => p.id !== phraseId);
+                    }
+                    
+                    updateSelectedCounts();
+                });
+            });
+        }
+        
+        // 渲染句子列表
+        function renderSentencesList(filter = '') {
+            const sentencesList = document.getElementById('sentences-list');
+            sentencesList.innerHTML = '';
+            
+            const filteredSentences = sentencesData.filter(sentence => 
+                sentence.sentence.toLowerCase().includes(filter.toLowerCase()) || 
+                sentence.meaning.toLowerCase().includes(filter.toLowerCase())
+            );
+            
+            if (filteredSentences.length === 0) {
+                sentencesList.innerHTML = '<div class="empty-state">未找到匹配的句子</div>';
+                return;
+            }
+            
+            filteredSentences.forEach(sentence => {
+                const isSelected = selectedSentences.some(selected => selected.id === sentence.id);
+                
+                const sentenceItem = document.createElement('div');
+                sentenceItem.className = 'metadata-item';
+                sentenceItem.innerHTML = `
+                    <div class="metadata-checkbox">
+                        <input type="checkbox" class="sentence-checkbox" data-id="${sentence.id}" ${isSelected ? 'checked' : ''}>
+                    </div>
+                    <div class="metadata-content">
+                        <div><strong>${sentence.sentence}</strong></div>
+                        <div style="font-size: 12px; color: #8c8c8c;">${sentence.meaning}</div>
+                    </div>
+                `;
+                sentencesList.appendChild(sentenceItem);
+            });
+            
+            // 添加复选框事件监听
+            document.querySelectorAll('.sentence-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const sentenceId = parseInt(this.getAttribute('data-id'));
+                    const sentence = sentencesData.find(s => s.id === sentenceId);
+                    
+                    if (this.checked) {
+                        if (!selectedSentences.some(s => s.id === sentenceId)) {
+                            selectedSentences.push(sentence);
+                        }
+                    } else {
+                        selectedSentences = selectedSentences.filter(s => s.id !== sentenceId);
+                    }
+                    
+                    updateSelectedCounts();
+                });
+            });
+        }
+        
+        // 更新选择计数
+        function updateSelectedCounts() {
+            // 更新选项卡内的计数
+            document.getElementById('words-selected-count').textContent = 
+                document.querySelectorAll('.word-checkbox:checked').length;
+            document.getElementById('phrases-selected-count').textContent = 
+                document.querySelectorAll('.phrase-checkbox:checked').length;
+            document.getElementById('sentences-selected-count').textContent = 
+                document.querySelectorAll('.sentence-checkbox:checked').length;
+            
+            // 更新已选内容计数和列表
+            document.getElementById('selected-words-count').textContent = selectedWords.length;
+            document.getElementById('selected-phrases-count').textContent = selectedPhrases.length;
+            document.getElementById('selected-sentences-count').textContent = selectedSentences.length;
+            
+            // 渲染已选单词列表
+            const selectedWordsList = document.getElementById('selected-words-list');
+            selectedWordsList.innerHTML = '';
+            
+            if (selectedWords.length === 0) {
+                selectedWordsList.innerHTML = '<div class="empty-state">暂无已选单词</div>';
+            } else {
+                selectedWords.forEach(word => {
+                    const wordItem = document.createElement('div');
+                    wordItem.className = 'selected-item';
+                    wordItem.innerHTML = `
+                        ${word.word}
+                        <span class="remove-selected" data-type="word" data-id="${word.id}">×</span>
+                    `;
+                    selectedWordsList.appendChild(wordItem);
+                });
+            }
+            
+            // 渲染已选短语列表
+            const selectedPhrasesList = document.getElementById('selected-phrases-list');
+            selectedPhrasesList.innerHTML = '';
+            
+            if (selectedPhrases.length === 0) {
+                selectedPhrasesList.innerHTML = '<div class="empty-state">暂无已选短语</div>';
+            } else {
+                selectedPhrases.forEach(phrase => {
+                    const phraseItem = document.createElement('div');
+                    phraseItem.className = 'selected-item';
+                    phraseItem.innerHTML = `
+                        ${phrase.phrase}
+                        <span class="remove-selected" data-type="phrase" data-id="${phrase.id}">×</span>
+                    `;
+                    selectedPhrasesList.appendChild(phraseItem);
+                });
+            }
+            
+            // 渲染已选句子列表
+            const selectedSentencesList = document.getElementById('selected-sentences-list');
+            selectedSentencesList.innerHTML = '';
+            
+            if (selectedSentences.length === 0) {
+                selectedSentencesList.innerHTML = '<div class="empty-state">暂无已选句子</div>';
+            } else {
+                selectedSentences.forEach(sentence => {
+                    const sentenceItem = document.createElement('div');
+                    sentenceItem.className = 'selected-item';
+                    sentenceItem.innerHTML = `
+                        ${sentence.sentence.substring(0, 30)}...
+                        <span class="remove-selected" data-type="sentence" data-id="${sentence.id}">×</span>
+                    `;
+                    selectedSentencesList.appendChild(sentenceItem);
+                });
+            }
+            
+            // 添加移除事件监听
+            document.querySelectorAll('.remove-selected').forEach(removeBtn => {
+                removeBtn.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    const id = parseInt(this.getAttribute('data-id'));
+                    
+                    if (type === 'word') {
+                        selectedWords = selectedWords.filter(w => w.id !== id);
+                        // 取消对应复选框的选中状态
+                        const checkbox = document.querySelector(`.word-checkbox[data-id="${id}"]`);
+                        if (checkbox) checkbox.checked = false;
+                    } else if (type === 'phrase') {
+                        selectedPhrases = selectedPhrases.filter(p => p.id !== id);
+                        const checkbox = document.querySelector(`.phrase-checkbox[data-id="${id}"]`);
+                        if (checkbox) checkbox.checked = false;
+                    } else if (type === 'sentence') {
+                        selectedSentences = selectedSentences.filter(s => s.id !== id);
+                        const checkbox = document.querySelector(`.sentence-checkbox[data-id="${id}"]`);
+                        if (checkbox) checkbox.checked = false;
+                    }
+                    
+                    updateSelectedCounts();
+                });
+            });
+        }
+        
+        // 搜索功能
+        document.getElementById('words-search').addEventListener('input', function() {
+            renderWordsList(this.value);
+        });
+        
+        document.getElementById('phrases-search').addEventListener('input', function() {
+            renderPhrasesList(this.value);
+        });
+        
+        document.getElementById('sentences-search').addEventListener('input', function() {
+            renderSentencesList(this.value);
+        });
+        
+        // 批量添加按钮
+        document.getElementById('add-words').addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('.word-checkbox:checked');
+            checkboxes.forEach(checkbox => {
+                const wordId = parseInt(checkbox.getAttribute('data-id'));
+                const word = wordsData.find(w => w.id === wordId);
+                
+                if (!selectedWords.some(w => w.id === wordId)) {
+                    selectedWords.push(word);
+                }
+            });
+            
+            updateSelectedCounts();
+        });
+        
+        document.getElementById('add-phrases').addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('.phrase-checkbox:checked');
+            checkboxes.forEach(checkbox => {
+                const phraseId = parseInt(checkbox.getAttribute('data-id'));
+                const phrase = phrasesData.find(p => p.id === phraseId);
+                
+                if (!selectedPhrases.some(p => p.id === phraseId)) {
+                    selectedPhrases.push(phrase);
+                }
+            });
+            
+            updateSelectedCounts();
+        });
+        
+        document.getElementById('add-sentences').addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('.sentence-checkbox:checked');
+            checkboxes.forEach(checkbox => {
+                const sentenceId = parseInt(checkbox.getAttribute('data-id'));
+                const sentence = sentencesData.find(s => s.id === sentenceId);
+                
+                if (!selectedSentences.some(s => s.id === sentenceId)) {
+                    selectedSentences.push(sentence);
+                }
+            });
+            
+            updateSelectedCounts();
+        });
+        
+        // 确定按钮
+        document.getElementById('confirmBtn').addEventListener('click', function() {
+            const assignmentName = document.getElementById('assignmentName').value;
+            const stage = document.getElementById('stage').value;
+            const grade = document.getElementById('grade').value;
+            const semester = document.getElementById('semester').value;
+            const version = document.getElementById('version').value;
+            
+            if (!assignmentName) {
+                alert('请输入作业单名称');
+                return;
+            }
+            
+            if (!stage || !grade || !semester || !version) {
+                alert('请完善作业单信息');
+                return;
+            }
+            
+            if (selectedWords.length === 0 && selectedPhrases.length === 0 && selectedSentences.length === 0) {
+                alert('请至少选择一种内容');
+                return;
+            }
+            
+            // 这里应该发送数据到后端
+            console.log('作业单信息:', {
+                name: assignmentName,
+                stage,
+                grade,
+                semester,
+                version,
+                words: selectedWords,
+                phrases: selectedPhrases,
+                sentences: selectedSentences
+            });
+            
+            alert('作业单创建成功！');
+            closeModal();
+        });
+        
+        // 重置表单
+        function resetForm() {
+            document.getElementById('assignmentName').value = '';
+            selectedWords = [];
+            selectedPhrases = [];
+            selectedSentences = [];
+            updateSelectedCounts();
+        }
+        
+        // 初始化
+        renderWordsList();
+        renderPhrasesList();
+        renderSentencesList();
+    </script>
+</body>
+</html>
