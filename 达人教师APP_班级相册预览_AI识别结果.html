@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级相册 - 学生识别结果</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            max-width: 375px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 状态栏样式 */
+        .status-bar {
+            background: #000;
+            color: #fff;
+            padding: 5px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            height: 44px;
+        }
+        
+        .status-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .status-right {
+            display: flex;
+            align-items: center;
+        }
+        
+        .network-speed {
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        
+        .battery {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* 顶部标题栏 */
+        .header {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .time-info {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* 照片区域 */
+        .photo-container {
+            position: relative;
+            background: #f9f9f9;
+        }
+        
+        .photo-placeholder {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, #e0e7ff, #d1e0ff);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #5c7cfa;
+            font-size: 16px;
+            position: relative;
+        }
+        
+        .photo-placeholder i {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        /* 识别结果区域 */
+        .recognition-results {
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            color: #5c7cfa;
+        }
+        
+        .tags-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .student-tag {
+            background: #f0f5ff;
+            border: 1px solid #d6e4ff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+        
+        .student-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .student-name {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 16px;
+        }
+        
+        .student-id {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .reassociate-btn {
+            background: #5c7cfa;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .reassociate-btn:hover {
+            background: #4c6ef5;
+        }
+        
+        /* 底部交互区域 */
+        .interaction-bar {
+            background: white;
+            padding: 10px 15px;
+            border-top: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .comment-input {
+            flex: 1;
+            background: #f5f7fa;
+            border: none;
+            border-radius: 18px;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            align-items: center;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            margin-left: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .action-btn i {
+            margin-right: 4px;
+            font-size: 18px;
+        }
+        
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 320px;
+            max-height: 80vh;
+            overflow: hidden;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .student-list {
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .student-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .student-item:hover {
+            background: #f5f7fa;
+        }
+        
+        .student-item:last-child {
+            border-bottom: none;
+        }
+        
+        .student-item-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .student-item-name {
+            font-weight: 500;
+        }
+        
+        .student-item-id {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+        
+        .footer-actions {
+            padding: 16px 20px;
+            border-top: 1px solid #eaeaea;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #5c7cfa;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #4c6ef5;
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #e9ecef;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            font-size: 12px;
+            color: #28a745;
+            margin-left: 8px;
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 4px;
+        }
+        
+        .confidence {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        /* 横屏检测 */
+        .orientation-alert {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .orientation-alert i {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .orientation-alert p {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        @media screen and (orientation: landscape) and (max-height: 600px) {
+            .orientation-alert {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 横屏提示 -->
+    <div class="orientation-alert">
+        <i>📱</i>
+        <p>请将设备旋转至竖屏模式</p>
+        <p>以获得最佳浏览体验</p>
+    </div>
+    
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="status-left">17:48</div>
+        <div class="status-right">
+            <span class="network-speed">0.96 KB/s</span>
+            <span>5G</span>
+            <div class="battery">99%</div>
+        </div>
+    </div>
+    
+    <!-- 顶部标题栏 -->
+    <div class="header">
+        <h1>研学(1/190)</h1>
+        <div class="time-info">2025/10/14 10:16</div>
+    </div>
+    
+    <!-- 照片区域 -->
+    <div class="photo-container">
+        <div class="photo-placeholder">
+            <i>📷</i>
+            <div>学生照片预览</div>
+            <div style="font-size: 14px; margin-top: 8px;">两名小学生坐在桌前学习</div>
+        </div>
+    </div>
+    
+    <!-- 识别结果区域 -->
+    <div class="recognition-results">
+        <div class="section-title">
+            <i>👤</i> AI识别结果
+            <span class="status-indicator">
+                <span class="status-dot"></span>
+                识别完成
+            </span>
+        </div>
+        
+        <div class="tags-container" id="studentTags">
+            <!-- 识别结果标签将通过JavaScript动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 底部交互区域 -->
+    <div class="interaction-bar">
+        <input type="text" class="comment-input" placeholder="说些什么...">
+        <div class="action-buttons">
+            <button class="action-btn">
+                <i>👍</i> 0
+            </button>
+            <button class="action-btn">
+                <i>💬</i> 0
+            </button>
+        </div>
+    </div>
+    
+    <!-- 重新关联模态框 -->
+    <div class="modal-overlay" id="reassociateModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">重新关联学生</div>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="student-list" id="studentList">
+                <!-- 学生列表将通过JavaScript动态生成 -->
+            </div>
+            <div class="footer-actions">
+                <button class="btn btn-secondary" id="cancelReassociate">取消</button>
+                <button class="btn btn-primary" id="confirmReassociate">确认关联</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟识别结果数据
+        const recognitionResults = [
+            { id: 1, name: "李小萌", studentId: "S2025001", confidence: 0.95, faceIndex: 0 },
+            { id: 2, name: "张小明", studentId: "S2025002", confidence: 0.87, faceIndex: 1 }
+        ];
+        
+        // 模拟班级学生列表
+        const classStudents = [
+            { id: 1, name: "李小萌", studentId: "S2025001" },
+            { id: 2, name: "张小明", studentId: "S2025002" },
+            { id: 3, name: "王小红", studentId: "S2025003" },
+            { id: 4, name: "刘小华", studentId: "S2025004" },
+            { id: 5, name: "赵小强", studentId: "S2025005" }
+        ];
+        
+        // 当前正在重新关联的学生索引
+        let currentReassociatingIndex = -1;
+        // 当前选中的学生ID（在重新关联时使用）
+        let currentSelectedStudentId = null;
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            renderStudentTags();
+            setupEventListeners();
+            checkOrientation();
+            
+            // 监听屏幕方向变化
+            window.addEventListener('resize', checkOrientation);
+            window.addEventListener('orientationchange', checkOrientation);
+        });
+        
+        // 检查屏幕方向
+        function checkOrientation() {
+            const alert = document.querySelector('.orientation-alert');
+            if (window.innerHeight < window.innerWidth && window.innerHeight < 600) {
+                alert.style.display = 'flex';
+            } else {
+                alert.style.display = 'none';
+            }
+        }
+        
+        // 渲染学生标签
+        function renderStudentTags() {
+            const container = document.getElementById('studentTags');
+            container.innerHTML = '';
+            
+            if (recognitionResults.length === 0) {
+                container.innerHTML = '<div class="no-results">未识别到学生信息</div>';
+                return;
+            }
+            
+            recognitionResults.forEach((student, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'student-tag';
+                tag.innerHTML = `
+                    <div class="student-info">
+                        <span class="student-name">${student.name}</span>
+                        <span class="student-id">学号: ${student.studentId}</span>
+                        <span class="confidence">识别可信度: ${(student.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    <button class="reassociate-btn" data-index="${index}">重新关联</button>
+                `;
+                container.appendChild(tag);
+            });
+        }
+        
+        // 设置事件监听
+        function setupEventListeners() {
+            // 重新关联按钮点击事件
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('reassociate-btn')) {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    openReassociateModal(index);
+                }
+            });
+            
+            // 关闭模态框
+            document.getElementById('closeModal').addEventListener('click', closeReassociateModal);
+            document.getElementById('cancelReassociate').addEventListener('click', closeReassociateModal);
+            
+            // 确认重新关联
+            document.getElementById('confirmReassociate').addEventListener('click', confirmReassociation);
+            
+            // 点击模态框外部关闭
+            document.getElementById('reassociateModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeReassociateModal();
+                }
+            });
+            
+            // 点赞和评论按钮（无功能，仅保留样式）
+            document.querySelectorAll('.action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 这里可以添加实际的点赞/评论功能
+                    console.log('点击了功能按钮:', this.textContent.trim());
+                });
+            });
+        }
+        
+        // 打开重新关联模态框
+        function openReassociateModal(index) {
+            currentReassociatingIndex = index;
+            const student = recognitionResults[index];
+            
+            // 渲染学生列表
+            const studentList = document.getElementById('studentList');
+            studentList.innerHTML = '';
+            
+            classStudents.forEach(classStudent => {
+                const item = document.createElement('div');
+                item.className = 'student-item';
+                item.setAttribute('data-id', classStudent.id);
+                
+                // 标记当前关联的学生
+                if (classStudent.id === student.id) {
+                    item.style.background = '#f0f5ff';
+                }
+                
+                item.innerHTML = `
+                    <div class="student-item-info">
+                        <span class="student-item-name">${classStudent.name}</span>
+                        <span class="student-item-id">学号: ${classStudent.studentId}</span>
+                    </div>
+                `;
+                
+                // 选中事件
+                item.addEventListener('click', function() {
+                    // 移除之前选中的样式
+                    document.querySelectorAll('.student-item').forEach(el => {
+                        el.style.background = '';
+                    });
+                    // 设置当前选中样式
+                    this.style.background = '#f0f5ff';
+                    // 更新当前选中的学生ID
+                    currentSelectedStudentId = classStudent.id;
+                });
+                
+                studentList.appendChild(item);
+            });
+            
+            // 显示模态框
+            document.getElementById('reassociateModal').classList.add('active');
+            
+            // 默认选中当前关联的学生
+            const currentItem = document.querySelector(`.student-item[data-id="${student.id}"]`);
+            if (currentItem) {
+                currentItem.style.background = '#f0f5ff';
+                currentSelectedStudentId = student.id;
+            }
+        }
+        
+        // 关闭重新关联模态框
+        function closeReassociateModal() {
+            document.getElementById('reassociateModal').classList.remove('active');
+            currentReassociatingIndex = -1;
+        }
+        
+        // 确认重新关联
+        function confirmReassociation() {
+            if (currentReassociatingIndex === -1 || !currentSelectedStudentId) return;
+            
+            // 找到选中的学生信息
+            const selectedStudent = classStudents.find(s => s.id === currentSelectedStudentId);
+            
+            if (selectedStudent) {
+                // 更新识别结果
+                recognitionResults[currentReassociatingIndex] = {
+                    ...recognitionResults[currentReassociatingIndex],
+                    id: selectedStudent.id,
+                    name: selectedStudent.name,
+                    studentId: selectedStudent.studentId
+                };
+                
+                // 重新渲染标签
+                renderStudentTags();
+                
+                // 关闭模态框
+                closeReassociateModal();
+                
+                // 这里可以添加实际更新后端的代码
+                console.log(`已更新第${currentReassociatingIndex + 1}个学生的关联信息为:`, selectedStudent);
+            }
+        }
+    </script>
+</body>
+</html>
