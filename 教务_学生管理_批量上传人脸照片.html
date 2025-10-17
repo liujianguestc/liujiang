@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生信息管理系统 - 人脸照片批量上传</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .class-name {
+            font-size: 20px;
+            color: #1890ff;
+            font-weight: bold;
+        }
+        
+        .search-box {
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-box input {
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        
+        .search-box button {
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+        
+        .batch-upload-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .batch-upload-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .batch-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .batch-btn {
+            padding: 8px 15px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #52c41a;
+            color: white;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        th {
+            background-color: #f5f7fa;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f5f7fa;
+        }
+        
+        .gender-icon {
+            margin-left: 8px;
+            font-size: 14px;
+        }
+        
+        .male {
+            color: #1890ff;
+        }
+        
+        .female {
+            color: #f759ab;
+        }
+        
+        .face-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .face-photo:hover {
+            transform: scale(1.1);
+        }
+        
+        .no-photo {
+            width: 40px;
+            height: 40px;
+            background-color: #f5f5f5;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-view {
+            background-color: #52c41a;
+            color: white;
+        }
+        
+        .btn-upload {
+            background-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-replace {
+            background-color: #faad14;
+            color: white;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-photo {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 15px 0;
+        }
+        
+        .modal-buttons {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .modal-buttons button {
+            padding: 8px 15px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-close {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .btn-delete {
+            background-color: #ff4d4f;
+            color: white;
+        }
+        
+        /* 批量上传模态框样式 */
+        .batch-modal-content {
+            max-width: 800px;
+        }
+        
+        .student-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .student-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .student-item:last-child {
+            border-bottom: none;
+        }
+        
+        .student-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .student-name {
+            width: 100px;
+            font-weight: bold;
+        }
+        
+        .student-id {
+            width: 80px;
+            color: #666;
+        }
+        
+        .photo-preview {
+            width: 60px;
+            height: 60px;
+            margin-right: 10px;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        
+        .no-photo-preview {
+            color: #999;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .file-input-container {
+            position: relative;
+            width: 150px;
+        }
+        
+        .file-input {
+            width: 100%;
+            padding: 8px;
+            font-size: 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .file-input-btn {
+            background: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .file-name {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* 导入表格上传模态框样式 */
+        .excel-template {
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .template-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .template-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        
+        .template-table th, .template-table td {
+            border: 1px solid #d9d9d9;
+            padding: 5px;
+            text-align: center;
+        }
+        
+        .template-table th {
+            background-color: #e6f7ff;
+        }
+        
+        .upload-area {
+            border: 2px dashed #d9d9d9;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #1890ff;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #d9d9d9;
+            margin-bottom: 10px;
+        }
+        
+        .modal-buttons {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="class-name">一年级1班</div>
+            <div class="search-box">
+                <input type="text" placeholder="请输入学生姓名">
+                <button>搜索</button>
+            </div>
+        </div>
+        
+        <div class="batch-upload-section">
+            <div class="batch-upload-title">批量上传人脸照片</div>
+            <div class="batch-buttons">
+                <button class="batch-btn btn-primary" onclick="openBatchModal()">
+                    <i class="fas fa-users"></i> 批量上传
+                </button>
+                <button class="batch-btn btn-secondary" onclick="openExcelModal()">
+                    <i class="fas fa-file-excel"></i> 导入表格上传
+                </button>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>人脸照片</th>
+                    <th>启鸣号</th>
+                    <th>生日</th>
+                    <th>在校状态</th>
+                    <th>选修课程</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>路博尧 <i class="fas fa-mars gender-icon male"></i></td>
+                    <td><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MCA0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTgiIGZpbGw9IiNmMGYyZjUiLz48Y2lyY2xlIGN4PSIyMCIgY3k9IjE2IiByPSI0IiBmaWxsPSIjYzBjNGNjIi8+PHBhdGggZD0iTTI4LDMwIEMyOCwyNCAyNCwyMCAyMCwyMCBDMTYsMjAgMTIsMjQgMTIsMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2MwYzRjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+" class="face-photo" alt="路博尧" onclick="previewPhoto(this)"></td>
+                    <td>1067</td>
+                    <td>2018-11-01</td>
+                    <td><span style="color: #52c41a;">在校</span></td>
+                    <td>--</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-view">查看详情</button>
+                            <button class="btn btn-replace" onclick="openUploadModal('路博尧', '1067')">更换照片</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>黄昕恬 <i class="fas fa-venus gender-icon female"></i></td>
+                    <td><div class="no-photo">暂无</div></td>
+                    <td>1074</td>
+                    <td>2018-12-19</td>
+                    <td><span style="color: #52c41a;">在校</span></td>
+                    <td>--</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-view">查看详情</button>
+                            <button class="btn btn-upload" onclick="openUploadModal('黄昕恬', '1074')">上传照片</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>范语彤 <i class="fas fa-venus gender-icon female"></i></td>
+                    <td><div class="no-photo">暂无</div></td>
+                    <td>1064</td>
+                    <td>2019-01-17</td>
+                    <td><span style="color: #52c41a;">在校</span></td>
+                    <td>--</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-view">查看详情</button>
+                            <button class="btn btn-upload" onclick="openUploadModal('范语彤', '1064')">上传照片</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>林希睿 <i class="fas fa-mars gender-icon male"></i></td>
+                    <td><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MCA0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTgiIGZpbGw9IiNmMGYyZjUiLz48Y2lyY2xlIGN4PSIyMCIgY3k9IjE2IiByPSI0IiBmaWxsPSIjYzBjNGNjIi8+PHBhdGggZD0iTTI4LDMwIEMyOCwyNCAyNCwyMCAyMCwyMCBDMTYsMjAgMTIsMjQgMTIsMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2MwYzRjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+" class="face-photo" alt="林希睿" onclick="previewPhoto(this)"></td>
+                    <td>1056</td>
+                    <td>2019-08-10</td>
+                    <td><span style="color: #52c41a;">在校</span></td>
+                    <td>--</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-view">查看详情</button>
+                            <button class="btn btn-replace" onclick="openUploadModal('林希睿', '1056')">更换照片</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>陈佳栋 <i class="fas fa-mars gender-icon male"></i></td>
+                    <td><div class="no-photo">暂无</div></td>
+                    <td>1071</td>
+                    <td>2019-04-14</td>
+                    <td><span style="color: #52c41a;">在校</span></td>
+                    <td>--</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-view">查看详情</button>
+                            <button class="btn btn-upload" onclick="openUploadModal('陈佳栋', '1071')">上传照片</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- 批量上传模态框 -->
+    <div id="batchModal" class="modal">
+        <div class="modal-content batch-modal-content">
+            <div class="modal-header">
+                <div class="modal-title">批量上传人脸照片</div>
+                <button class="close-btn" onclick="closeBatchModal()">&times;</button>
+            </div>
+            
+            <div class="student-list" id="studentList">
+                <!-- 学生列表将通过JavaScript动态生成 -->
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn-close" onclick="closeBatchModal()">取消</button>
+                <button class="btn-primary" onclick="startBatchUpload()">开始上传</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 导入表格上传模态框 -->
+    <div id="excelModal" class="modal">
+        <div class="modal-content batch-modal-content">
+            <div class="modal-header">
+                <div class="modal-title">导入表格批量上传</div>
+                <button class="close-btn" onclick="closeExcelModal()">&times;</button>
+            </div>
+            
+            <div class="excel-template">
+                <div class="template-title">Excel模板格式要求：</div>
+                <table class="template-table">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>启鸣号</th>
+                            <th>照片文件名</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>路博尧</td>
+                            <td>1067</td>
+                            <td>路博尧.jpg</td>
+                        </tr>
+                        <tr>
+                            <td>黄昕恬</td>
+                            <td>1074</td>
+                            <td>黄昕恬.png</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                    注意：照片文件需要与Excel文件放在同一文件夹下，并打包为ZIP文件上传
+                </p>
+            </div>
+            
+            <div class="upload-area" onclick="document.getElementById('excelFileInput').click()">
+                <div class="upload-icon">📁</div>
+                <p>点击选择Excel文件或ZIP压缩包</p>
+                <p style="font-size: 12px; color: #999;">支持 .xlsx, .xls, .zip 格式</p>
+            </div>
+            
+            <input type="file" id="excelFileInput" accept=".xlsx,.xls,.zip" style="display: none;" onchange="handleExcelFileSelect(this)">
+            
+            <div class="modal-buttons">
+                <button class="btn-close" onclick="closeExcelModal()">取消</button>
+                <button class="btn-secondary" onclick="startExcelUpload()" id="confirmExcelUpload" disabled>开始上传</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 照片预览模态框 -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <h3 id="previewStudentName">学生姓名</h3>
+            <img id="previewImage" class="modal-photo" src="" alt="学生照片">
+            <div class="modal-buttons">
+                <button class="btn-close" onclick="closePreviewModal()">关闭</button>
+                <button class="btn-delete" onclick="deletePhoto()">删除照片</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟学生数据
+        const students = [
+            { name: "路博尧", id: "1067", gender: "male", hasPhoto: true },
+            { name: "黄昕恬", id: "1074", gender: "female", hasPhoto: false },
+            { name: "范语彤", id: "1064", gender: "female", hasPhoto: false },
+            { name: "林希睿", id: "1056", gender: "male", hasPhoto: true },
+            { name: "陈佳栋", id: "1071", gender: "male", hasPhoto: false }
+        ];
+        
+        // 批量上传相关变量
+        let studentPhotos = {};
+        let currentStudent = {};
+        
+        // 打开批量上传模态框
+        function openBatchModal() {
+            document.getElementById('batchModal').style.display = 'flex';
+            renderStudentList();
+        }
+        
+        // 关闭批量上传模态框
+        function closeBatchModal() {
+            document.getElementById('batchModal').style.display = 'none';
+            // 重置状态
+            studentPhotos = {};
+        }
+        
+        // 渲染学生列表
+        function renderStudentList() {
+            const studentList = document.getElementById('studentList');
+            studentList.innerHTML = '';
+            
+            students.forEach(student => {
+                const studentItem = document.createElement('div');
+                studentItem.className = 'student-item';
+                
+                studentItem.innerHTML = `
+                    <div class="student-info">
+                        <div class="student-name">${student.name}</div>
+                        <div class="student-id">${student.id}</div>
+                    </div>
+                    <div class="photo-preview" id="preview-${student.id}">
+                        <div class="no-photo-preview">暂无照片</div>
+                    </div>
+                    <div class="file-input-container">
+                        <input type="file" class="file-input" id="file-${student.id}" accept="image/*" onchange="handleStudentPhotoSelect('${student.id}', this)">
+                        <button class="file-input-btn" onclick="document.getElementById('file-${student.id}').click()">选择</button>
+                        <div class="file-name" id="fileName-${student.id}"></div>
+                    </div>
+                `;
+                
+                studentList.appendChild(studentItem);
+            });
+        }
+        
+        // 处理学生照片选择
+        function handleStudentPhotoSelect(studentId, input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // 检查文件类型和大小
+                if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                    alert('请选择 JPG 或 PNG 格式的图片！');
+                    input.value = '';
+                    updatePhotoPreview(studentId, null);
+                    return;
+                }
+                
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('图片大小不能超过 2MB！');
+                    input.value = '';
+                    updatePhotoPreview(studentId, null);
+                    return;
+                }
+                
+                // 显示文件名
+                document.getElementById(`fileName-${studentId}`).textContent = file.name;
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    studentPhotos[studentId] = {
+                        file: file,
+                        dataUrl: e.target.result
+                    };
+                    updatePhotoPreview(studentId, e.target.result);
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                // 清空选择
+                document.getElementById(`fileName-${studentId}`).textContent = '';
+                updatePhotoPreview(studentId, null);
+                delete studentPhotos[studentId];
+            }
+        }
+        
+        // 更新照片预览
+        function updatePhotoPreview(studentId, dataUrl) {
+            const previewContainer = document.getElementById(`preview-${studentId}`);
+            
+            if (dataUrl) {
+                previewContainer.innerHTML = `<img src="${dataUrl}" alt="预览" onclick="previewSelectedPhoto('${studentId}')">`;
+            } else {
+                previewContainer.innerHTML = '<div class="no-photo-preview">暂无照片</div>';
+            }
+        }
+        
+        // 预览选择的照片（大图）
+        function previewSelectedPhoto(studentId) {
+            if (studentPhotos[studentId]) {
+                const student = students.find(s => s.id === studentId);
+                document.getElementById('previewStudentName').textContent = student.name;
+                document.getElementById('previewImage').src = studentPhotos[studentId].dataUrl;
+                document.getElementById('previewModal').style.display = 'flex';
+                
+                // 存储当前学生信息
+                currentStudent.name = student.name;
+                currentStudent.id = studentId;
+            }
+        }
+        
+        // 开始批量上传
+        function startBatchUpload() {
+            const studentsWithPhotos = Object.keys(studentPhotos);
+            
+            if (studentsWithPhotos.length === 0) {
+                alert('请至少为一名学生选择照片！');
+                return;
+            }
+            
+            // 模拟上传过程
+            alert(`开始上传 ${studentsWithPhotos.length} 张照片...`);
+            
+            // 在实际应用中，这里应该发送请求到服务器上传照片
+            // 这里仅模拟上传效果
+            setTimeout(() => {
+                closeBatchModal();
+                alert('批量上传完成！');
+            }, 1000);
+        }
+        
+        // 打开导入表格上传模态框
+        function openExcelModal() {
+            document.getElementById('excelModal').style.display = 'flex';
+        }
+        
+        // 关闭导入表格上传模态框
+        function closeExcelModal() {
+            document.getElementById('excelModal').style.display = 'none';
+            document.getElementById('excelFileInput').value = '';
+            document.getElementById('confirmExcelUpload').disabled = true;
+        }
+        
+        // 处理Excel文件选择
+        function handleExcelFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const fileName = file.name.toLowerCase();
+                
+                // 检查文件类型
+                if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls') && !fileName.endsWith('.zip')) {
+                    alert('请选择Excel文件(.xlsx, .xls)或ZIP压缩包！');
+                    input.value = '';
+                    return;
+                }
+                
+                document.getElementById('confirmExcelUpload').disabled = false;
+            }
+        }
+        
+        // 开始Excel上传
+        function startExcelUpload() {
+            // 模拟上传过程
+            alert('开始上传Excel文件...');
+            
+            // 在实际应用中，这里应该发送请求到服务器上传Excel文件
+            // 这里仅模拟上传效果
+            setTimeout(() => {
+                closeExcelModal();
+                alert('表格导入完成！成功导入 8 张学生照片。');
+            }, 1000);
+        }
+        
+        // 照片预览相关函数
+        function previewPhoto(element) {
+            if (element.classList.contains('face-photo')) {
+                const studentRow = element.closest('tr');
+                const studentName = studentRow.cells[0].textContent.trim();
+                
+                document.getElementById('previewStudentName').textContent = studentName;
+                document.getElementById('previewImage').src = element.src;
+                document.getElementById('previewModal').style.display = 'flex';
+                
+                // 存储当前学生信息
+                currentStudent.name = studentName;
+                currentStudent.id = studentRow.cells[2].textContent;
+            }
+        }
+        
+        function closePreviewModal() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+        
+        function deletePhoto() {
+            if (confirm(`确定要删除 ${currentStudent.name} 的照片吗？`)) {
+                // 在实际应用中，这里应该发送请求到服务器删除照片
+                // 这里仅模拟删除效果
+                const studentRow = findStudentRow(currentStudent.id);
+                if (studentRow) {
+                    const photoCell = studentRow.cells[1];
+                    photoCell.innerHTML = '<div class="no-photo">暂无</div>';
+                    
+                    // 更新操作按钮
+                    const actionCell = studentRow.cells[6];
+                    actionCell.querySelector('.btn-replace').textContent = '上传照片';
+                    actionCell.querySelector('.btn-replace').classList.replace('btn-replace', 'btn-upload');
+                }
+                
+                closePreviewModal();
+                alert('照片删除成功！');
+            }
+        }
+        
+        // 单个上传相关函数（简化版）
+        function openUploadModal(studentName, studentId) {
+            alert(`为 ${studentName} (${studentId}) 上传照片功能`);
+            // 在实际应用中，这里应该打开单个上传模态框
+        }
+        
+        // 根据学号查找学生行
+        function findStudentRow(studentId) {
+            const rows = document.querySelectorAll('tbody tr');
+            for (let row of rows) {
+                if (row.cells[2].textContent === studentId) {
+                    return row;
+                }
+            }
+            return null;
+        }
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modals = ['previewModal', 'batchModal', 'excelModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    if (modalId === 'previewModal') closePreviewModal();
+                    if (modalId === 'batchModal') closeBatchModal();
+                    if (modalId === 'excelModal') closeExcelModal();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
