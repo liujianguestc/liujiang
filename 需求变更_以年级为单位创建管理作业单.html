@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作业单管理系统 - 年级模式</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        /* 头部筛选区域 */
+        .filter-bar {
+            padding: 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .filter-item label {
+            margin-right: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        select, input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .primary-btn {
+            background: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .primary-btn:hover {
+            background: #40a9ff;
+        }
+        
+        .secondary-btn {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .secondary-btn:hover {
+            background: #e6e6e6;
+        }
+        
+        /* 表格样式 */
+        .table-container {
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #f9f9f9;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .action-link {
+            color: #1890ff;
+            text-decoration: none;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .action-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            padding: 10px 0;
+        }
+        
+        .pagination button {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            margin: 0 3px;
+            cursor: pointer;
+        }
+        
+        .pagination button.active {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        /* 步骤指示器 */
+        .step-indicator {
+            display: flex;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            color: #999;
+        }
+        
+        .step.active {
+            color: #1890ff;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        
+        .step.active .step-number {
+            background: #1890ff;
+            color: white;
+        }
+        
+        .step-line {
+            width: 60px;
+            height: 2px;
+            background: #f0f0f0;
+            margin: 0 10px;
+        }
+        
+        /* 作业单卡片 */
+        .assignment-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .assignment-card {
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .assignment-card:hover {
+            border-color: #1890ff;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+        }
+        
+        .assignment-card.selected {
+            border-color: #1890ff;
+            background: #f0f8ff;
+        }
+        
+        .assignment-name {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .assignment-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        /* 批阅结果页面 */
+        .review-page {
+            display: none;
+        }
+        
+        .review-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #1890ff;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .review-content {
+            display: flex;
+            min-height: 500px;
+        }
+        
+        .student-list {
+            width: 250px;
+            border-right: 1px solid #eee;
+            overflow-y: auto;
+        }
+        
+        .student-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .student-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .student-item.active {
+            background: #e6f7ff;
+            border-right: 3px solid #1890ff;
+        }
+        
+        .student-name {
+            font-weight: 600;
+        }
+        
+        .student-id {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .assignment-review {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .assignment-info {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .assignment-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .question-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .question-item {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 12px;
+        }
+        
+        .question-text {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .student-answer {
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .correct-answer {
+            color: #52c41a;
+        }
+        
+        .incorrect-answer {
+            color: #f5222d;
+        }
+        
+        .mark {
+            margin-left: 5px;
+            font-weight: bold;
+        }
+        
+        /* 状态标签 */
+        .status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status.pending {
+            background: #fff7e6;
+            color: #fa8c16;
+        }
+        
+        .status.scanned {
+            background: #f6ffed;
+            color: #52c41a;
+        }
+        
+        /* 步骤内容区域 */
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        /* 作业单命名区域 */
+        .assignment-naming {
+            margin: 20px 0;
+        }
+        
+        .assignment-naming label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .assignment-naming input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .assignment-naming .hint {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #999;
+        }
+        
+        /* 模板预览区域 */
+        .template-preview {
+            background: #f9f9f9;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+        
+        .template-preview h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        
+        .template-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- 作业单管理页面 -->
+    <div class="container" id="assignment-management">
+        <div class="filter-bar">
+            <div class="filter-item">
+                <label>年级：</label>
+                <select id="grade-filter">
+                    <option value="all">全部</option>
+                    <option value="g1" selected>高一</option>
+                    <option value="g2">高二</option>
+                    <option value="g3">高三</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>教材版本：</label>
+                <select id="textbook-filter">
+                    <option value="all">全部</option>
+                    <option value="pep2019" selected>人教版 (2019)</option>
+                    <option value="pep2017">人教版 (2017)</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>状态：</label>
+                <select id="status-filter">
+                    <option value="all">全部状态</option>
+                    <option value="pending">待扫描</option>
+                    <option value="scanned">已扫描</option>
+                </select>
+            </div>
+            <button class="primary-btn" id="new-assignment-btn">新建默写作业单</button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>作业单名称</th>
+                        <th>词汇量</th>
+                        <th>短语量</th>
+                        <th>句子量</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="assignment-table-body">
+                    <!-- 表格数据将通过JavaScript动态生成 -->
+                </tbody>
+            </table>
+            
+            <div class="pagination">
+                <button>«</button>
+                <button class="active">1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>...</button>
+                <button>»</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新建作业单弹窗 -->
+    <div class="modal" id="new-assignment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>新建默写作业</span>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 步骤指示器 -->
+                <div class="step-indicator">
+                    <div class="step active" id="step1-indicator">
+                        <div class="step-number">1</div>
+                        <div class="step-text">选择模板</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step" id="step2-indicator">
+                        <div class="step-number">2</div>
+                        <div class="step-text">命名作业单</div>
+                    </div>
+                </div>
+                
+                <!-- 步骤1：选择模板 -->
+                <div class="step-content active" id="step1-content">
+                    <div class="filter-bar">
+                        <div class="filter-item">
+                            <label>年级：</label>
+                            <select id="modal-grade-filter">
+                                <option value="g1" selected>高一</option>
+                                <option value="g2">高二</option>
+                                <option value="g3">高三</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>教材版本：</label>
+                            <select id="modal-textbook-filter">
+                                <option value="pep2019" selected>人教版 (2019)</option>
+                                <option value="pep2017">人教版 (2017)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="assignment-cards" id="assignment-cards-container">
+                        <!-- 作业单卡片将通过JavaScript动态生成 -->
+                    </div>
+                    
+                    <div class="pagination">
+                        <span>总计: 8</span>
+                        <button class="active">1</button>
+                        <button>2</button>
+                        <input type="number" min="1" value="1" style="width: 50px;">
+                        <span>页</span>
+                    </div>
+                </div>
+                
+                <!-- 步骤2：命名作业单 -->
+                <div class="step-content" id="step2-content">
+                    <!-- 模板预览 -->
+                    <div class="template-preview" id="template-preview">
+                        <h3>已选模板：<span id="selected-template-name">未选择</span></h3>
+                        <div class="template-stats">
+                            <span>词汇量：<span id="selected-words">0</span></span>
+                            <span>短语量：<span id="selected-phrases">0</span></span>
+                            <span>句子量：<span id="selected-sentences">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 作业单命名区域 -->
+                    <div class="assignment-naming">
+                        <label for="assignment-name">作业单名称</label>
+                        <input type="text" id="assignment-name" placeholder="请输入作业单名称，例如：高中一年级三班4单元默写测验">
+                        <div class="hint">请为作业单设置一个易于识别的名称，便于后续管理</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" id="prev-step" style="display: none;">上一步</button>
+                <button class="secondary-btn" id="cancel-modal">取消</button>
+                <button class="primary-btn" id="next-step">下一步</button>
+                <button class="primary-btn" id="confirm-assignment" style="display: none;">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 批阅结果页面 -->
+    <div class="container review-page" id="review-page">
+        <div class="review-header">
+            <button class="back-btn" id="back-to-management">
+                <span>←</span> 返回作业单列表
+            </button>
+            <div>
+                <span>批阅结果查看 | 高一 - 测试作业单1022</span>
+            </div>
+            <div>
+                <button class="primary-btn">识别异常处理</button>
+                <button class="primary-btn">打印当前页</button>
+                <button class="primary-btn">整班打印</button>
+            </div>
+        </div>
+        
+        <div class="filter-bar">
+            <div class="filter-item">
+                <label>班级筛选：</label>
+                <select id="class-filter">
+                    <option value="all">全部班级</option>
+                    <option value="1">1班</option>
+                    <option value="2">2班</option>
+                    <option value="3">3班</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="review-content">
+            <div class="student-list" id="student-list">
+                <!-- 学生列表将通过JavaScript动态生成 -->
+            </div>
+            <div class="assignment-review" id="assignment-review">
+                <!-- 作业批阅内容将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        const assignments = [
+            { id: 1, name: "sddddddddddd", words: 39, phrases: 21, sentences: 15, status: "pending", scannedCount: 0 },
+            { id: 2, name: "sddddddddddd", words: 39, phrases: 21, sentences: 15, status: "pending", scannedCount: 0 },
+            { id: 3, name: "测试作业单1022", words: 41, phrases: 24, sentences: 39, status: "pending", scannedCount: 0 },
+            { id: 4, name: "测试作业单1022", words: 41, phrases: 24, sentences: 39, status: "pending", scannedCount: 0 },
+            { id: 5, name: "测试作业单1022", words: 41, phrases: 24, sentences: 39, status: "pending", scannedCount: 0 },
+            { id: 6, name: "测试作业单1022", words: 41, phrases: 24, sentences: 39, status: "scanned", scannedCount: 3 },
+            { id: 7, name: "测试作业单1022", words: 40, phrases: 23, sentences: 38, status: "pending", scannedCount: 0 },
+            { id: 8, name: "测试作业单1022", words: 40, phrases: 23, sentences: 38, status: "pending", scannedCount: 0 },
+            { id: 9, name: "提测自测", words: 10, phrases: 7, sentences: 13, status: "pending", scannedCount: 0 },
+            { id: 10, name: "提测自测", words: 10, phrases: 7, sentences: 13, status: "pending", scannedCount: 0 },
+            { id: 11, name: "测试2", words: 50, phrases: 26, sentences: 39, status: "pending", scannedCount: 0 },
+            { id: 12, name: "测试2", words: 50, phrases: 26, sentences: 39, status: "pending", scannedCount: 0 },
+            { id: 13, name: "AI识别测试作业单", words: 20, phrases: 9, sentences: 15, status: "pending", scannedCount: 0 },
+            { id: 14, name: "测试作业单1022", words: 46, phrases: 24, sentences: 39, status: "pending", scannedCount: 0 }
+        ];
+        
+        const assignmentTemplates = [
+            { id: 1, name: "AI识别作业单3", words: 46, phrases: 26, sentences: 20, description: "啊实打实是的是的水电费是的水电费是的啊实打实是的是的水电费是的水电费是的啊实打实是的是的水电费是的水电费是的" },
+            { id: 2, name: "测试2", words: 50, phrases: 26, sentences: 39, description: "" },
+            { id: 3, name: "测试2", words: 53, phrases: 9, sentences: 0, description: "" },
+            { id: 4, name: "测试自我测", words: 10, phrases: 7, sentences: 13, description: "" },
+            { id: 5, name: "测试作业单1022", words: 5, phrases: 0, sentences: 0, description: "" }
+        ];
+        
+        const students = [
+            { id: 1, name: "张惠然", studentId: "3710008479", class: "1班" },
+            { id: 2, name: "姚昕睿", studentId: "3830010713", class: "1班", hasLowConfidence: true },
+            { id: 3, name: "毛剑拓", studentId: "3830010887", class: "1班" },
+            { id: 4, name: "李明", studentId: "3830010888", class: "2班" },
+            { id: 5, name: "王芳", studentId: "3830010889", class: "2班" }
+        ];
+        
+        const assignmentQuestions = [
+            { id: 1, word: "exchange", pronunciation: "/iks tʃeɪndʒ/", meaning: "交换；交流；交易；兑换" },
+            { id: 2, word: "lecture", pronunciation: "/lektʃər/", meaning: "讲座；讲课；教训；（开）讲座；讲课；训斥" },
+            { id: 3, word: "registration", pronunciation: "/redʒɪs'treɪʃ(ə)n/", meaning: "登记；注册；挂号" },
+            { id: 4, word: "yesterday", pronunciation: "/'jestərdeɪ/", meaning: "昨天" },
+            { id: 5, word: "sex", pronunciation: "/seks/", meaning: "性别" },
+            { id: 6, word: "female", pronunciation: "/'fiːmeɪl/", meaning: "女（性）的；雌的；雌性动（植）物" },
+            { id: 7, word: "male", pronunciation: "/meɪl/", meaning: "男（性）的；雄的；雄性动（植）物" },
+            { id: 8, word: "nationality", pronunciation: "/næʃə'næləti/", meaning: "国籍；民族" },
+            { id: 9, word: "nation", pronunciation: "/'neɪʃ(ə)n/", meaning: "国家；民族；国民" },
+            { id: 10, word: "designer", pronunciation: "/dɪ'zaɪnər/", meaning: "设计者" }
+        ];
+        
+        // 全局变量
+        let selectedTemplate = null;
+        let currentStep = 1;
+        
+        // DOM元素
+        const assignmentManagement = document.getElementById('assignment-management');
+        const newAssignmentModal = document.getElementById('new-assignment-modal');
+        const reviewPage = document.getElementById('review-page');
+        const assignmentTableBody = document.getElementById('assignment-table-body');
+        const assignmentCardsContainer = document.getElementById('assignment-cards-container');
+        const studentList = document.getElementById('student-list');
+        const assignmentReview = document.getElementById('assignment-review');
+        const step1Content = document.getElementById('step1-content');
+        const step2Content = document.getElementById('step2-content');
+        const step1Indicator = document.getElementById('step1-indicator');
+        const step2Indicator = document.getElementById('step2-indicator');
+        const assignmentNameInput = document.getElementById('assignment-name');
+        const nextStepBtn = document.getElementById('next-step');
+        const prevStepBtn = document.getElementById('prev-step');
+        const confirmAssignmentBtn = document.getElementById('confirm-assignment');
+        const templatePreview = document.getElementById('template-preview');
+        const selectedTemplateName = document.getElementById('selected-template-name');
+        const selectedWords = document.getElementById('selected-words');
+        const selectedPhrases = document.getElementById('selected-phrases');
+        const selectedSentences = document.getElementById('selected-sentences');
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            renderAssignmentTable();
+            renderAssignmentCards();
+            renderStudentList();
+            renderAssignmentReview(students[0]);
+            
+            // 事件监听
+            document.getElementById('new-assignment-btn').addEventListener('click', function() {
+                resetModal();
+                newAssignmentModal.style.display = 'flex';
+            });
+            
+            document.getElementById('close-modal').addEventListener('click', function() {
+                newAssignmentModal.style.display = 'none';
+            });
+            
+            document.getElementById('cancel-modal').addEventListener('click', function() {
+                newAssignmentModal.style.display = 'none';
+            });
+            
+            document.getElementById('confirm-assignment').addEventListener('click', function() {
+                const assignmentName = assignmentNameInput.value.trim();
+                if (!assignmentName) {
+                    alert('请输入作业单名称');
+                    return;
+                }
+                alert(`作业单 "${assignmentName}" 创建成功！`);
+                newAssignmentModal.style.display = 'none';
+                // 在实际应用中，这里应该将新作业单添加到列表中
+            });
+            
+            document.getElementById('back-to-management').addEventListener('click', function() {
+                reviewPage.style.display = 'none';
+                assignmentManagement.style.display = 'block';
+            });
+            
+            // 班级筛选
+            document.getElementById('class-filter').addEventListener('change', function() {
+                const selectedClass = this.value;
+                renderStudentList(selectedClass);
+            });
+            
+            // 下一步按钮
+            nextStepBtn.addEventListener('click', function() {
+                if (currentStep === 1) {
+                    if (!selectedTemplate) {
+                        alert('请先选择一个模板');
+                        return;
+                    }
+                    goToStep2();
+                } else {
+                    // 确认创建作业单
+                    const assignmentName = assignmentNameInput.value.trim();
+                    if (!assignmentName) {
+                        alert('请输入作业单名称');
+                        return;
+                    }
+                    alert(`作业单 "${assignmentName}" 创建成功！`);
+                    newAssignmentModal.style.display = 'none';
+                }
+            });
+            
+            // 上一步按钮
+            prevStepBtn.addEventListener('click', function() {
+                goToStep1();
+            });
+        });
+        
+        // 重置弹窗状态
+        function resetModal() {
+            currentStep = 1;
+            selectedTemplate = null;
+            step1Content.classList.add('active');
+            step2Content.classList.remove('active');
+            step1Indicator.classList.add('active');
+            step2Indicator.classList.remove('active');
+            prevStepBtn.style.display = 'none';
+            confirmAssignmentBtn.style.display = 'none';
+            nextStepBtn.textContent = '下一步';
+            nextStepBtn.style.display = 'inline-block';
+            assignmentNameInput.value = '';
+            templatePreview.style.display = 'none';
+            
+            // 取消所有卡片的选择状态
+            document.querySelectorAll('.assignment-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+        
+        // 切换到第二步（命名作业单）
+        function goToStep2() {
+            currentStep = 2;
+            step1Content.classList.remove('active');
+            step2Content.classList.add('active');
+            step1Indicator.classList.remove('active');
+            step2Indicator.classList.add('active');
+            prevStepBtn.style.display = 'inline-block';
+            nextStepBtn.textContent = '确定';
+            
+            // 更新模板预览信息
+            if (selectedTemplate) {
+                templatePreview.style.display = 'block';
+                selectedTemplateName.textContent = selectedTemplate.name;
+                selectedWords.textContent = selectedTemplate.words;
+                selectedPhrases.textContent = selectedTemplate.phrases;
+                selectedSentences.textContent = selectedTemplate.sentences;
+                
+                // 设置默认名称
+                const grade = document.getElementById('modal-grade-filter').value;
+                const gradeText = grade === 'g1' ? '高一' : grade === 'g2' ? '高二' : '高三';
+                const today = new Date();
+                const dateStr = `${today.getMonth() + 1}月${today.getDate()}日`;
+                assignmentNameInput.value = `${gradeText}${selectedTemplate.name}${dateStr}`;
+            }
+        }
+        
+        // 切换回第一步（选择模板）
+        function goToStep1() {
+            currentStep = 1;
+            step1Content.classList.add('active');
+            step2Content.classList.remove('active');
+            step1Indicator.classList.add('active');
+            step2Indicator.classList.remove('active');
+            prevStepBtn.style.display = 'none';
+            nextStepBtn.textContent = '下一步';
+            templatePreview.style.display = 'none';
+        }
+        
+        // 渲染作业单表格
+        function renderAssignmentTable() {
+            assignmentTableBody.innerHTML = '';
+            
+            assignments.forEach((assignment, index) => {
+                const row = document.createElement('tr');
+                
+                let statusHtml = '';
+                if (assignment.status === 'pending') {
+                    statusHtml = '<span class="status pending">待扫描</span>';
+                } else {
+                    statusHtml = `<span class="status scanned">已扫描${assignment.scannedCount}份</span>`;
+                }
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${assignment.name}</td>
+                    <td>${assignment.words}</td>
+                    <td>${assignment.phrases}</td>
+                    <td>${assignment.sentences}</td>
+                    <td>${statusHtml}</td>
+                    <td>
+                        <a class="action-link" onclick="previewAssignment(${assignment.id})">预览</a>
+                        <a class="action-link" onclick="printAssignment(${assignment.id})">打印作业单</a>
+                        <a class="action-link" onclick="viewReviewResults(${assignment.id})">批阅结果</a>
+                    </td>
+                `;
+                
+                assignmentTableBody.appendChild(row);
+            });
+        }
+        
+        // 渲染作业单卡片
+        function renderAssignmentCards() {
+            assignmentCardsContainer.innerHTML = '';
+            
+            assignmentTemplates.forEach(template => {
+                const card = document.createElement('div');
+                card.className = 'assignment-card';
+                card.innerHTML = `
+                    <div class="assignment-name">${template.name}</div>
+                    <div class="assignment-stats">
+                        <span>词汇量：${template.words}</span>
+                        <span>短语量：${template.phrases}</span>
+                        <span>句子量：${template.sentences}</span>
+                    </div>
+                    ${template.description ? `<div style="margin-top: 8px; font-size: 12px; color: #666;">${template.description}</div>` : ''}
+                `;
+                
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.assignment-card').forEach(c => {
+                        c.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    selectedTemplate = template;
+                });
+                
+                assignmentCardsContainer.appendChild(card);
+            });
+        }
+        
+        // 渲染学生列表
+        function renderStudentList(selectedClass = 'all') {
+            studentList.innerHTML = '';
+            
+            const filteredStudents = selectedClass === 'all' 
+                ? students 
+                : students.filter(student => student.class === selectedClass + '班');
+            
+            filteredStudents.forEach(student => {
+                const studentItem = document.createElement('div');
+                studentItem.className = 'student-item';
+                if (student.id === 1) studentItem.classList.add('active');
+                
+                studentItem.innerHTML = `
+                    ${student.hasLowConfidence ? '<span style="color: #fa8c16; margin-right: 5px;">!</span>' : ''}
+                    <div class="student-name">${student.name}</div>
+                    <div class="student-id">${student.studentId}</div>
+                `;
+                
+                studentItem.addEventListener('click', function() {
+                    document.querySelectorAll('.student-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    renderAssignmentReview(student);
+                });
+                
+                studentList.appendChild(studentItem);
+            });
+        }
+        
+        // 渲染作业批阅内容
+        function renderAssignmentReview(student) {
+            assignmentReview.innerHTML = `
+                <div class="assignment-info">
+                    <div class="assignment-title">测试作业单1022</div>
+                    <div>
+                        <span>姓名：${student.name}</span>
+                        <span style="margin-left: 20px;">学号：${student.studentId}</span>
+                        <span style="margin-left: 20px;">年级：高一</span>
+                        <span style="margin-left: 20px;">班级：${student.class}</span>
+                    </div>
+                </div>
+                <div class="question-list" id="question-list">
+                    ${assignmentQuestions.map((question, index) => `
+                        <div class="question-item">
+                            <div class="question-text">${index + 1}. ${question.meaning} / ${question.pronunciation} / ${question.word}</div>
+                            <div class="student-answer">学生答案: exchange</div>
+                            <div>
+                                <span class="${Math.random() > 0.3 ? 'correct-answer' : 'incorrect-answer'}">
+                                    ${Math.random() > 0.3 ? '正确' : '错误'}
+                                </span>
+                                <span class="mark">${Math.random() > 0.3 ? '✓' : '✗'}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // 功能函数
+        function previewAssignment(id) {
+            alert(`预览作业单 ${id}`);
+        }
+        
+        function printAssignment(id) {
+            alert(`打印作业单 ${id}`);
+        }
+        
+        function viewReviewResults(id) {
+            assignmentManagement.style.display = 'none';
+            reviewPage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
